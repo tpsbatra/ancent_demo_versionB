@@ -37,7 +37,7 @@ document.getElementById("output").textContent="Generating..."
 
 try{
 
-const response=await fetch("https://api.anthropic.com/v1/messages",{
+const response=await fetch("https://claude-demo-proxy.ssoconsul.workers.dev",{
 
 method:"POST",
 
