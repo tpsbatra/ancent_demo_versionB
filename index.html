@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Owl · AI Demo</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+<div class="screen active" id="s-apikey">
+<h1>Data Owl · AI Demo</h1>
+<p>Enter your OpenAI API key</p>
+
+<input id="apikey-input" type="password" placeholder="sk-xxxx">
+
+<div id="apikey-error" class="error">
+Invalid API key format
+</div>
+
+<button onclick="handleApiKey()">Continue →</button>
+</div>
+
+
+<div class="screen" id="s-demo">
+<h2>AI Demo</h2>
+
+<textarea id="prompt"
+placeholder="Example: Design a luxury coffee table for a Mumbai apartment"></textarea>
+
+<button onclick="runAI()">Generate</button>
+
+<pre id="output"></pre>
+
+<button onclick="goHome()">Home</button>
+</div>
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
