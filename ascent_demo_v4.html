@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Data Owl · AI Demo</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0A0A0A;color:#fff;min-height:100vh}
+  input,select,textarea{font-family:inherit}
+  select option{background:#1a2535;color:#fff}
+  .screen{display:none;min-height:100vh}
+  .screen.active{display:flex}
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:#0d1520}
+  ::-webkit-scrollbar-thumb{background:#C4472A55;border-radius:3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{animation:fadeIn 0.4s ease forwards}
+  .tab-btn{padding:9px 15px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:400;display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.12);color:#aaa;background:rgba(255,255,255,0.04);font-family:inherit;white-space:nowrap;transition:all 0.2s}
+  .tab-btn.active{font-weight:700;color:#fff}
+  .inp{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);border-radius:7px;padding:9px 13px;color:#fff;font-family:inherit;font-size:13px;outline:none;width:100%;transition:border 0.2s}
+  .inp:focus{border-color:rgba(196,71,42,0.6)}
+  .lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#889;margin-bottom:5px;display:block}
+  .field{margin-bottom:10px}
+  .run-btn{width:100%;padding:13px;border-radius:8px;border:none;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .run-btn:disabled{opacity:0.5;cursor:not-allowed}
+  .home-btn{background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:7px;padding:7px 14px;color:#aaa;font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all 0.2s}
+  .home-btn:hover{border-color:rgba(255,255,255,0.3);color:#fff}
+  .dl-btn{padding:7px 16px;background:transparent;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.2s}
+  .copy-btn{padding:7px 16px;background:transparent;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;margin-top:10px}
+  .footer{text-align:center;padding:20px;font-size:12px;color:#C4472A;font-weight:600;letter-spacing:1px;text-transform:uppercase;border-top:1px solid rgba(196,71,42,0.15);margin-top:20px}
+  .footer span{color:#3A7BD5}
+  /* Responsive */
+  .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  @media(max-width:700px){
+    .demo-grid{grid-template-columns:1fr}
+    .input-col{border-right:none!important;border-bottom:1px solid rgba(196,71,42,0.2)}
+    .tabs-row{overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:4px}
+    h1{font-size:32px!important}
+  }
+  .wa-bubble{background:#005C4B;border-radius:14px 14px 3px 14px;padding:12px 16px;max-width:90%;font-size:13px;line-height:1.65;color:#e8e8e8}
+  .wa-time{font-size:10px;color:rgba(255,255,255,0.35);text-align:right;margin-top:5px}
+  .mood-tag{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(123,63,160,0.15);border:1px solid rgba(123,63,160,0.35);color:#c090e0}
+  .colour-swatch{width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,0.2)}
+  .step-badge{width:24px;height:24px;border-radius:50%;background:#1B8B6E;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+  .step-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .step-content{flex:1;background:rgba(27,139,110,0.1);border:1px solid rgba(27,139,110,0.25);border-radius:6px;padding:6px 12px;font-size:12px}
+  .toggle-row{display:flex;gap:8px;margin-bottom:14px}
+  .toggle-btn{padding:7px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#888;transition:all 0.2s}
+  .toggle-btn.active{color:#fff}
+  .tool-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 14px;margin-bottom:8px}
+  .tool-name{font-size:13px;font-weight:700;color:#C4472A;margin-bottom:3px}
+  .tool-desc{font-size:12px;color:#889;line-height:1.5}
+  .tool-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;margin-left:8px}
+  .free{background:rgba(27,139,110,0.2);color:#2DD4BF;border:1px solid rgba(27,139,110,0.3)}
+  .paid{background:rgba(196,71,42,0.15);color:#e07060;border:1px solid rgba(196,71,42,0.25)}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin:0;font-size:13px;line-height:1.85;color:#ccd}
+  @media print {
+    .screen { display:none!important }
+    #s-demo { display:block!important }
+    nav, .tabs-row, .input-col, #run-btn, .dl-btn, .copy-btn, .home-btn, .footer, #output-placeholder, #output-loading { display:none!important }
+    body { background:#fff!important; color:#000!important }
+    #output-content { display:block!important }
+    pre { color:#222!important; font-size:12px!important }
+    .demo-grid { grid-template-columns:1fr!important }
+    #card-header { border:1px solid #ddd!important; border-radius:8px!important; margin-bottom:12px }
+    #card-title { color:#000!important }
+    #card-tag { color:#C4472A!important }
+    .mood-tag { border:1px solid #999!important; color:#333!important; background:#f5f5f5!important }
+    .tool-card { border:1px solid #ddd!important; background:#fafafa!important }
+    .tool-name { color:#C4472A!important }
+    .tool-desc { color:#444!important }
+    .wa-bubble { background:#e8f5e9!important; color:#000!important }
+    #email-body-box { background:#f5f5f5!important; color:#000!important; border:1px solid #ddd!important }
+  }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 0: API KEY -->
+<div class="screen active" id="s-apikey" style="flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;position:relative">
+  <div style="font-size:28px;font-weight:900;letter-spacing:2px;margin-bottom:24px"><span style="color:#C4472A">Data</span><span style="color:#3A7BD5">Owl</span></div>
+  <div style="font-size:11px;color:#aaa;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Data Owl · AI Demo</div>
+  <h2 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:6px">Enter API Key</h2>
+  <p style="font-size:13px;color:#aaa;max-width:340px;line-height:1.7;margin-bottom:28px">Your Anthropic API key is used to power the AI demos. It stays in memory only — never stored or shared.</p>
+  <input type="password" id="apikey-input" placeholder="sk-ant-api..." class="inp" style="max-width:360px;font-size:14px;letter-spacing:1px;margin-bottom:10px" />
+  <div id="apikey-error" style="color:#C4472A;font-size:12px;margin-bottom:10px;display:none">Please enter a valid API key (starts with sk-ant-)</div>
+  <button onclick="handleApiKey()" style="background:linear-gradient(135deg,#C4472A,#3A7BD5);border:none;border-radius:10px;padding:13px 40px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;margin-top:4px">Continue →</button>
+  <div style="margin-top:16px;font-size:11px;color:#444">Need an API key? Visit <span style="color:#3A7BD5">console.anthropic.com</span></div>
+  <div style="position:absolute;bottom:20px;font-size:12px;color:#C4472A;font-weight:600;letter-spacing:1px">POWERED BY <span style="color:#3A7BD5">DATA OWL</span></div>
+</div>
+
+<!-- SCREEN 1: PASSWORD -->
+<div class="screen" id="s-password" style="flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;position:relative">
+  <div style="font-size:28px;font-weight:900;letter-spacing:2px;margin-bottom:24px"><span style="color:#C4472A">Data</span><span style="color:#3A7BD5">Owl</span></div>
+  <div style="font-size:12px;color:#aaa;letter-spacing:3px;text-transform:uppercase;margin-bottom:28px">Enter Access Code</div>
+  <input type="password" id="pwd-input" placeholder="••••" maxlength="10"
+    style="background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 24px;color:#fff;font-size:26px;text-align:center;letter-spacing:12px;width:180px;outline:none;font-family:inherit;margin-bottom:10px;transition:border 0.2s"
+    onkeydown="if(event.key==='Enter')handlePwd()" />
+  <div id="pwd-error" style="color:#C4472A;font-size:12px;margin-bottom:10px;display:none">Incorrect code, please try again</div>
+  <button onclick="handlePwd()" style="background:linear-gradient(135deg,#C4472A,#3A7BD5);border:none;border-radius:8px;padding:13px 38px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;margin-top:4px">Enter →</button>
+  <div style="position:absolute;bottom:20px;font-size:12px;color:#C4472A;font-weight:600;letter-spacing:1px">POWERED BY <span style="color:#3A7BD5">DATA OWL</span></div>
+</div>
+
+<!-- SCREEN 2: LANDING -->
+<div class="screen" id="s-landing" style="flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;position:relative">
+  <div style="font-size:42px;font-weight:900;letter-spacing:2px;margin-bottom:12px"><span style="color:#C4472A">Data</span><span style="color:#3A7BD5">Owl</span></div>
+  <div style="font-size:11px;color:#aaa;letter-spacing:3px;text-transform:uppercase;margin-bottom:24px">Ascent Business Forum</div>
+  <h1 style="font-size:clamp(34px,6vw,62px);font-weight:800;color:#fff;line-height:1.1;margin-bottom:16px">
+    See Further.<br/>
+    <span style="color:#C4472A">Decide </span><span style="color:#3A7BD5">Smarter.</span>
+  </h1>
+  <p style="font-size:16px;color:#aaa;max-width:440px;line-height:1.85;margin-bottom:48px">AI-powered tools for Indian business owners — live, interactive, built for your business.</p>
+  <button onclick="showScreen('s-demo')" style="background:linear-gradient(135deg,#C4472A,#3A7BD5);border:none;border-radius:12px;padding:17px 52px;color:#fff;font-weight:800;font-size:18px;cursor:pointer;font-family:inherit;letter-spacing:0.5px;box-shadow:0 8px 32px rgba(196,71,42,0.35)">Start Demo →</button>
+  <div style="position:absolute;bottom:20px;font-size:12px;color:#C4472A;font-weight:600;letter-spacing:1px">POWERED BY <span style="color:#3A7BD5">DATA OWL</span></div>
+</div>
+
+<!-- SCREEN 3: DEMO -->
+<div class="screen" id="s-demo" style="flex-direction:column;background:#0D1520;min-height:100vh">
+
+  <!-- Nav -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid rgba(196,71,42,0.2);background:rgba(0,0,0,0.5);flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:10">
+    <div style="font-size:20px;font-weight:900;letter-spacing:2px;cursor:pointer" onclick="showScreen('s-landing')"><span style="color:#C4472A">Data</span><span style="color:#3A7BD5">Owl</span></div>
+    <span style="font-size:11px;color:#aaa;letter-spacing:1px;text-transform:uppercase">Ascent Business Forum · Live Demo</span>
+    <button class="home-btn" onclick="showScreen('s-landing')">🏠 Home</button>
+  </div>
+
+  <div style="max-width:1040px;margin:0 auto;padding:20px 16px 20px;width:100%">
+
+    <!-- Quick Fill -->
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#aaa;white-space:nowrap;font-weight:600">Quick fill for:</span>
+      <select id="participant-select" class="inp" onchange="handleParticipant(this.value)"
+        style="width:auto;flex:1;min-width:220px;max-width:380px;font-size:13px;padding:8px 12px;background:#1a2535;color:#fff">
+        <option value="0" style="background:#1a2535;color:#fff">— Type manually —</option>
+        <option value="1" style="background:#1a2535;color:#fff">Abhimanyu · Metals &amp; Trade</option>
+        <option value="2" style="background:#1a2535;color:#fff">Aleem · Advertising</option>
+        <option value="3" style="background:#1a2535;color:#fff">Kunal D · Packaging Mfg</option>
+        <option value="4" style="background:#1a2535;color:#fff">Kunal Mehta · Furniture Design</option>
+        <option value="5" style="background:#1a2535;color:#fff">Rahul · Law Firm</option>
+        <option value="6" style="background:#1a2535;color:#fff">Ritesh · SKF Distribution</option>
+        <option value="7" style="background:#1a2535;color:#fff">Rashesh · Biotech Mfg</option>
+        <option value="8" style="background:#1a2535;color:#fff">Sandeep · Automation</option>
+        <option value="9" style="background:#1a2535;color:#fff">Mihika · Rubber Distribution</option>
+        <option value="10" style="background:#1a2535;color:#fff">Sidharth · Textile Mfg</option>
+      </select>
+      <span id="participant-confirm" style="font-size:11px;color:#1B8B6E;font-weight:600;display:none">✓ All tabs updated</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px">
+      <button class="tab-btn active" id="tab-forecast" onclick="switchTab('forecast')" style="border-color:#C4472A;background:#C4472A;color:#fff">📊 Demand Forecasting</button>
+      <button class="tab-btn" id="tab-leads" onclick="switchTab('leads')">🎯 Lead Outreach</button>
+      <button class="tab-btn" id="tab-ar" onclick="switchTab('ar')">💰 Payment Reminders</button>
+      <button class="tab-btn" id="tab-design" onclick="switchTab('design')">🎨 Design Brief</button>
+      <button class="tab-btn" id="tab-workflow" onclick="switchTab('workflow')">⚖️ Legal</button>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#111E2C;border:1px solid rgba(196,71,42,0.2);border-radius:14px;overflow:hidden">
+
+      <!-- Card Header -->
+      <div id="card-header" style="padding:16px 22px;border-bottom:1px solid rgba(196,71,42,0.2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <span id="card-tag" style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:4px;margin-bottom:6px;background:#C4472A22;color:#C4472A">📊 THEME 03</span>
+          <div id="card-title" style="font-size:19px;font-weight:800">Demand Forecasting</div>
+        </div>
+        <div id="card-who" style="font-size:12px;color:#aaa">For: <span style="color:#3A7BD5;font-weight:600">Rahul · Sidharth · Sandeep</span></div>
+      </div>
+
+      <!-- Demo Grid -->
+      <div class="demo-grid">
+
+        <!-- LEFT: Inputs -->
+        <div class="input-col" style="padding:18px 20px;border-right:1px solid rgba(196,71,42,0.2)">
+          <div style="font-size:10px;font-weight:700;color:#778;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px">Inputs</div>
+
+          <!-- FORECAST INPUTS -->
+          <div id="inputs-forecast">
+            <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:12px">
+              <thead><tr>
+                <th style="background:rgba(196,71,42,0.12);color:#C4472A;padding:5px 8px;text-align:left;font-size:10px;text-transform:uppercase">Month</th>
+                <th style="background:rgba(196,71,42,0.12);color:#C4472A;padding:5px 8px;text-align:left;font-size:10px;text-transform:uppercase">Rs. Lakh</th>
+                <th style="background:rgba(196,71,42,0.12);color:#C4472A;padding:5px 8px;text-align:left;font-size:10px;text-transform:uppercase">Notes</th>
+              </tr></thead>
+              <tbody id="months-tbody"></tbody>
+            </table>
+            <div class="field"><label class="lbl">Industry</label><input class="inp" id="f-industry" value="Textile Manufacturing"/></div>
+            <div class="field"><label class="lbl">Your Question</label><input class="inp" id="f-question" value="What will July look like and should I pre-order raw materials?"/></div>
+          </div>
+
+          <!-- LEADS INPUTS -->
+          <div id="inputs-leads" style="display:none">
+            <div class="toggle-row">
+              <button class="toggle-btn active" id="leads-toggle-cold" onclick="leadsMode('cold')" style="border-color:#3A7BD5;background:#3A7BD522;color:#6aabf0">Cold Email</button>
+              <button class="toggle-btn" id="leads-toggle-followup" onclick="leadsMode('followup')">Follow-up Email</button>
+            </div>
+            <div class="field"><label class="lbl">Your Business</label><input class="inp" id="f-biz" value="Textile manufacturing"/></div>
+            <div class="field"><label class="lbl">Target Prospect</label><input class="inp" id="f-prospect" value="Buying agent at a garment export house"/></div>
+            <div class="field"><label class="lbl">Key Advantage</label><input class="inp" id="f-advantage" value="BCI cotton certified, MOQ 500 metres, 2 week lead time"/></div>
+            <div class="field"><label class="lbl">Tone</label>
+              <select class="inp" id="f-tone">
+                <option>professional and direct</option>
+                <option>warm and relationship-focused</option>
+                <option>bold and confident</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- AR INPUTS -->
+          <div id="inputs-ar" style="display:none">
+            <div class="field"><label class="lbl">Client Name</label><input class="inp" id="f-client" value="Fashion Exports Pvt Ltd"/></div>
+            <div class="field"><label class="lbl">Amount Overdue (Rs.)</label><input class="inp" id="f-amount" value="3,30,000"/></div>
+            <div class="field"><label class="lbl">Days Overdue</label><input class="inp" type="number" id="f-days" value="38"/></div>
+            <div class="field"><label class="lbl">Relationship</label>
+              <select class="inp" id="f-rel">
+                <option>long-standing client of 5+ years</option>
+                <option>relatively new client</option>
+                <option>one-time buyer</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- DESIGN INPUTS -->
+          <div id="inputs-design" style="display:none">
+            <div class="field"><label class="lbl">Furniture Type</label><input class="inp" id="f-dtype" value="Executive lounge chair"/></div>
+            <div class="field"><label class="lbl">Style Direction</label>
+              <select class="inp" id="f-style">
+                <option>Japandi (minimalist + warm wood)</option>
+                <option>Mid-century modern</option>
+                <option>Industrial chic</option>
+                <option>Contemporary Indian luxury</option>
+                <option>Scandinavian minimalist</option>
+              </select>
+            </div>
+            <div class="field"><label class="lbl">Client Profile</label><input class="inp" id="f-dclient" value="Senior architect, luxury villa in Pune"/></div>
+            <div class="field"><label class="lbl">Budget</label>
+              <select class="inp" id="f-budget">
+                <option>Premium (Rs.1-3L)</option>
+                <option>Luxury (Rs.3-8L)</option>
+                <option>Ultra-luxury (Rs.8L+)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- WORKFLOW INPUTS -->
+          <div id="inputs-workflow" style="display:none">
+            <div class="toggle-row">
+              <button class="toggle-btn active" id="wf-toggle-workflow" onclick="workflowMode('workflow')" style="border-color:#1B8B6E;background:#1B8B6E22;color:#2DD4BF">Workflow Builder</button>
+              <button class="toggle-btn" id="wf-toggle-contract" onclick="workflowMode('contract')">Contract Drafting</button>
+            </div>
+            <div id="wf-workflow-inputs">
+              <div class="field"><label class="lbl">Assignment Type</label>
+                <select class="inp" id="f-wtype">
+                  <option>Contract Review &amp; Negotiation</option>
+                  <option>Employment Agreement</option>
+                  <option>Property / Real Estate Due Diligence</option>
+                  <option>Debt Recovery / Litigation</option>
+                  <option>Trademark / IP Registration</option>
+                  <option>Company Incorporation</option>
+                </select>
+              </div>
+              <div class="field"><label class="lbl">Client Type</label>
+                <select class="inp" id="f-wclient">
+                  <option>SME / Private Limited Company</option>
+                  <option>Individual / HUF</option>
+                  <option>Listed Company</option>
+                  <option>Startup / New Business</option>
+                </select>
+              </div>
+              <div class="field"><label class="lbl">Notes</label><textarea class="inp" id="f-wnotes" style="min-height:65px;resize:vertical;line-height:1.5">Standard domestic contract, 2 parties, quick turnaround</textarea></div>
+            </div>
+            <div id="wf-contract-inputs" style="display:none">
+              <div class="field"><label class="lbl">Contract Type</label>
+                <select class="inp" id="f-contract-type">
+                  <option>Non-Disclosure Agreement (NDA)</option>
+                  <option>IP Assignment Agreement</option>
+                  <option>Service Agreement</option>
+                  <option>Employment Contract</option>
+                  <option>Memorandum of Understanding (MOU)</option>
+                  <option>Vendor Agreement</option>
+                  <option>Founders Agreement</option>
+                </select>
+              </div>
+              <div class="field"><label class="lbl">Party 1 (Your Company)</label><input class="inp" id="f-party1" value=""  placeholder="Your company name"/></div>
+              <div class="field"><label class="lbl">Party 2 (Other Party)</label><input class="inp" id="f-party2" value="XYZ Technologies Pvt Ltd"/></div>
+              <div class="field"><label class="lbl">Key Terms / Context</label><textarea class="inp" id="f-contract-notes" style="min-height:65px;resize:vertical;line-height:1.5">2 year term, mutual confidentiality, India jurisdiction</textarea></div>
+            </div>
+          </div>
+
+          <div style="height:18px"></div>
+          <button class="run-btn" id="run-btn" onclick="runDemo()">▶&nbsp; Run Demo</button>
+        </div>
+
+        <!-- RIGHT: Output -->
+        <div style="padding:18px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:10px;font-weight:700;color:#778;letter-spacing:1px;text-transform:uppercase">Output</div>
+            <div style="display:flex;gap:8px">
+              <button class="dl-btn" id="print-btn" onclick="window.print()" style="display:none;border:1px solid rgba(255,255,255,0.2);color:#aaa">🖨 PDF</button>
+              <button class="dl-btn" id="dl-btn" onclick="downloadOutput()" style="display:none">⬇ Download</button>
+            </div>
+          </div>
+
+          <!-- Placeholder -->
+          <div id="output-placeholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;color:#334;text-align:center;gap:10px">
+            <div style="font-size:40px;opacity:0.2" id="placeholder-emoji">📊</div>
+            <div style="font-size:13px;color:#aaa">Fill in the inputs and hit Run Demo</div>
+          </div>
+
+          <!-- Loading -->
+          <div id="output-loading" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:220px;gap:16px">
+            <div id="loading-emoji" style="font-size:36px">📊</div>
+            <div style="display:flex;gap:7px" id="dots-row">
+              <div style="width:9px;height:9px;border-radius:50%;animation:pulse 1.2s 0s infinite"></div>
+              <div style="width:9px;height:9px;border-radius:50%;animation:pulse 1.2s 0.2s infinite"></div>
+              <div style="width:9px;height:9px;border-radius:50%;animation:pulse 1.2s 0.4s infinite"></div>
+            </div>
+            <div style="font-size:13px;color:#aaa">AI is generating your output...</div>
+          </div>
+
+          <!-- Output content -->
+          <div id="output-content" style="display:none" class="fade-in">
+
+            <!-- FORECAST output -->
+            <div id="out-forecast">
+              <canvas id="forecast-chart" style="width:100%;max-height:160px;margin-bottom:10px"></canvas>
+              <div style="display:flex;gap:14px;margin-bottom:12px">
+                <span style="font-size:11px;color:#3A7BD5">■ Actual</span>
+                <span style="font-size:11px;color:#C4472A">■ AI Forecast</span>
+              </div>
+              <pre id="forecast-text"></pre>
+            </div>
+
+            <!-- LEADS output -->
+            <div id="out-leads" style="display:none">
+              <div id="leads-subjects" style="margin-bottom:14px;display:none">
+                <div style="font-size:10px;color:#778;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Subject Line Options</div>
+                <div id="subject-a" style="background:rgba(58,123,213,0.1);border:1px solid rgba(58,123,213,0.3);border-radius:7px;padding:8px 12px;font-size:13px;color:#6aabf0;margin-bottom:6px"></div>
+                <div id="subject-b" style="background:rgba(196,71,42,0.1);border:1px solid rgba(196,71,42,0.3);border-radius:7px;padding:8px 12px;font-size:13px;color:#e07060"></div>
+              </div>
+              <div id="email-body-box" style="background:#1a2535;border-radius:8px;padding:14px;font-size:13px;line-height:1.8;color:#ccd;white-space:pre-wrap;word-break:break-word;border:1px solid rgba(255,255,255,0.06)"></div>
+              <button class="copy-btn" onclick="copyText('email-body-box')" style="border:1px solid rgba(58,123,213,0.4);color:#6aabf0">Copy as Email</button>
+            </div>
+
+            <!-- AR output -->
+            <div id="out-ar" style="display:none">
+              <div id="wa-preview" style="margin-bottom:16px;display:none">
+                <div style="font-size:10px;color:#778;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">WhatsApp Preview — Message 1</div>
+                <div style="background:#0d1a13;border-radius:12px;padding:14px 12px;display:flex;justify-content:flex-end">
+                  <div class="wa-bubble"><div id="wa-msg-text"></div><div class="wa-time">12:30 ✓✓</div></div>
+                </div>
+              </div>
+              <pre id="ar-text"></pre>
+              <button class="copy-btn" onclick="copyWa()" style="border:1px solid rgba(212,146,10,0.4);color:#D4920A">Copy WhatsApp Message</button>
+              <div id="escalation-box" style="margin-top:14px;background:rgba(212,146,10,0.08);border:1px solid rgba(212,146,10,0.2);border-radius:8px;padding:12px;font-size:12px;color:#D4920A;display:none">
+                <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;color:#D4920A">Team Escalation Summary</div>
+                <div id="escalation-text" style="color:#ccd;font-size:13px;line-height:1.6"></div>
+              </div>
+            </div>
+
+            <!-- DESIGN output -->
+            <div id="out-design" style="display:none">
+              <div id="mood-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+              <div id="colour-swatches" style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap"></div>
+              <pre id="design-text"></pre>
+              <div id="ai-tools-section" style="margin-top:16px;display:none">
+                <div style="font-size:10px;font-weight:700;color:#778;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">🛠 AI Tools to Bring This to Life</div>
+                <div id="ai-tools-list"></div>
+              </div>
+            </div>
+
+            <!-- WORKFLOW output -->
+            <div id="out-workflow" style="display:none">
+              <div id="workflow-steps-vis" style="margin-bottom:16px;display:none">
+                <div style="font-size:10px;color:#778;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Workflow Steps</div>
+                <div id="steps-list"></div>
+              </div>
+              <pre id="workflow-text"></pre>
+              <div id="contract-continue-wrap" style="display:none;margin-top:16px">
+                <button id="contract-continue-btn" onclick="continueContract()" style="background:#1B8B6E;border:none;border-radius:8px;padding:10px 24px;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px">
+                  <span>Continue →</span>
+                </button>
+              </div>
+              <div id="contract-complete-badge" style="display:none;margin-top:16px;background:rgba(27,139,110,0.1);border:1px solid rgba(27,139,110,0.3);border-radius:8px;padding:10px 16px;font-size:12px;color:#2DD4BF;font-weight:600">✓ Contract Complete</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">POWERED BY <span>DATA OWL</span></div>
+  </div>
+</div>
+
+<script>
+
+let apiKey = "";
+let currentTab = "forecast";
+let leadsCurrentMode = "cold";
+let workflowCurrentMode = "workflow";
+let currentOutput = "";
+let currentWaMsg = "";
+let contractHistory = [];
+
+const DEMOS = {
+  forecast: { color: "#C4472A", tag: "📊 THEME 03", title: "Demand Forecasting", who: "Rahul · Sidharth · Sandeep", emoji: "📊" },
+  leads:    { color: "#3A7BD5", tag: "🎯 THEME 01", title: "Cold Outreach Email",   who: "Abhimanyu · Rashesh · Kunal D", emoji: "🎯" },
+  ar:       { color: "#D4920A", tag: "💰 THEME 02", title: "Payment Reminders",    who: "Rashesh · Mihika · Ritesh", emoji: "💰" },
+  design:   { color: "#7B3FA0", tag: "🎨 THEME 04", title: "Design Concept Brief", who: "Kunal Mehta", emoji: "🎨" },
+  workflow: { color: "#1B8B6E", tag: "⚖️ THEME 05", title: "Legal",                who: "Rahul", emoji: "⚖️" },
+};
+
+const PARTICIPANTS = [
+  null,
+  { industry:"Metals Manufacturing & Trading", biz:"Metals manufacturing and trading", prospect:"Procurement manager at an auto components factory", advantage:"Pan-India delivery in 48 hours, ISO certified", client:"", amount:"", days:"", dtype:"", dclient:"", wnotes:"", question:"Metals demand has been uneven — should I stock up on raw material before the next quarter?", months:[{v:"68",n:"Strong"},{v:"54",n:"Slow"},{v:"72",n:"Bulk order"},{v:"60",n:"Normal"},{v:"49",n:"Summer dip"},{v:"65",n:"Recovery"}] },
+  { industry:"Advertising Agency", biz:"Full-service advertising agency", prospect:"Marketing director at a D2C brand", advantage:"Data-driven campaigns with proven ROI across 50+ brands", client:"", amount:"", days:"", dtype:"", dclient:"", wnotes:"", question:"Festive season is coming — how should I plan capacity and pitches for the next 2 months?", months:[{v:"32",n:"Normal"},{v:"28",n:"Slow"},{v:"45",n:"New client"},{v:"41",n:"Good"},{v:"38",n:"Normal"},{v:"52",n:"Pre-festive"}] },
+  { industry:"Packaging Manufacturing", biz:"Custom packaging manufacturing", prospect:"Supply chain head at an FMCG company", advantage:"Custom packaging in 7 days, 100% recyclable materials", client:"Sharma Industries Pvt Ltd", amount:"2,80,000", days:"35", dtype:"", dclient:"", wnotes:"", question:"FMCG clients are pushing for faster delivery — should I expand capacity now?", months:[{v:"85",n:"Strong"},{v:"78",n:"Normal"},{v:"92",n:"Big order"},{v:"88",n:"Good"},{v:"70",n:"Slow"},{v:"95",n:"Record"}] },
+  { industry:"Furniture & Decor Design", biz:"Premium furniture design house", prospect:"Interior designer sourcing for luxury residential project", advantage:"Custom designs in 3 weeks, 10 year warranty", client:"", amount:"", days:"", dtype:"Executive lounge chair", dclient:"Senior architect, luxury villa in Pune", wnotes:"", question:"Luxury segment enquiries are up — how do I forecast and manage my design pipeline?", months:[{v:"18",n:"Normal"},{v:"14",n:"Slow"},{v:"22",n:"Exhibition"},{v:"26",n:"Strong"},{v:"20",n:"Normal"},{v:"24",n:"Good"}] },
+  { industry:"Legal Services", biz:"Full-service law firm", prospect:"CFO at a mid-size manufacturing company", advantage:"Specialised in commercial law, 15 years track record", client:"Mehta Enterprises Ltd", amount:"4,50,000", days:"42", dtype:"", dclient:"", wnotes:"Standard domestic contract, 2 parties, quick turnaround", question:"Corporate filings peak every quarter — how do I forecast billing and staff allocation?", months:[{v:"55",n:"Normal"},{v:"48",n:"Slow"},{v:"70",n:"Quarter end"},{v:"62",n:"Good"},{v:"50",n:"Normal"},{v:"75",n:"Q end surge"}] },
+  { industry:"Industrial Distribution", biz:"SKF bearings and industrial parts distribution", prospect:"Maintenance head at a large textile mill", advantage:"Genuine SKF parts, same-day delivery within city", client:"Patel Engineering Works", amount:"1,95,000", days:"28", dtype:"", dclient:"", wnotes:"", question:"Plant shutdowns in summer slow demand — how do I plan inventory for the lean period?", months:[{v:"42",n:"Normal"},{v:"38",n:"Slow"},{v:"51",n:"Good"},{v:"47",n:"Normal"},{v:"33",n:"Plant shutdown"},{v:"44",n:"Recovery"}] },
+  { industry:"Biotech Manufacturing", biz:"Biotech manufacturing and sales", prospect:"Purchase manager at a hospital chain", advantage:"WHO-GMP certified, competitive pricing, 24hr support", client:"City Hospital Group", amount:"6,20,000", days:"55", dtype:"", dclient:"", wnotes:"", question:"Hospital procurement cycles are long — how do I forecast and manage my order pipeline?", months:[{v:"120",n:"Strong"},{v:"98",n:"Normal"},{v:"145",n:"Tender won"},{v:"132",n:"Good"},{v:"108",n:"Normal"},{v:"155",n:"New contract"}] },
+  { industry:"Industrial Automation", biz:"Industrial automation solutions", prospect:"Plant manager at a manufacturing unit", advantage:"20% efficiency improvement guaranteed or money back", client:"Gupta Automations Pvt Ltd", amount:"3,75,000", days:"31", dtype:"", dclient:"", wnotes:"", question:"Large projects have long sales cycles — how do I manage cash flow and project pipeline?", months:[{v:"95",n:"Normal"},{v:"80",n:"Slow"},{v:"140",n:"Project close"},{v:"75",n:"Pipeline building"},{v:"90",n:"Normal"},{v:"160",n:"Two projects"}] },
+  { industry:"Rubber Distribution", biz:"Rubber products distribution", prospect:"Purchase head at an automotive parts manufacturer", advantage:"Widest range of rubber profiles, 48hr pan-India delivery", client:"Auto Parts India Ltd", amount:"2,10,000", days:"25", dtype:"", dclient:"", wnotes:"", question:"Auto sector demand is cyclical — should I build inventory before the festive production push?", months:[{v:"38",n:"Normal"},{v:"32",n:"Slow"},{v:"44",n:"Good"},{v:"41",n:"Normal"},{v:"35",n:"Lean"},{v:"52",n:"Pre-festive"}] },
+  { industry:"Textile Manufacturing", biz:"Textile manufacturing", prospect:"Buying agent at a garment export house", advantage:"BCI cotton certified, MOQ 500 metres, 2 week lead time", client:"Fashion Exports Pvt Ltd", amount:"3,30,000", days:"38", dtype:"", dclient:"", wnotes:"", question:"What will July look like and should I pre-order raw materials?", months:[{v:"42",n:"Normal"},{v:"38",n:"Slow month"},{v:"55",n:"New client"},{v:"61",n:"Strong"},{v:"58",n:"Normal"},{v:"47",n:"Summer dip"}] },
+];
+
+const MN = ["Jan","Feb","Mar","Apr","May","Jun"];
+let months = [{v:"42",n:"Normal"},{v:"38",n:"Slow month"},{v:"55",n:"New client"},{v:"61",n:"Strong"},{v:"58",n:"Normal"},{v:"47",n:"Summer dip"}];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function handleApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key || !key.startsWith('sk-ant-') || key.length < 20) {
+    document.getElementById('apikey-error').style.display = 'block'; return;
+  }
+  apiKey = key;
+  document.getElementById('apikey-error').style.display = 'none';
+  showScreen('s-password');
+}
+
+function handlePwd() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd === '1020') { showScreen('s-landing'); }
+  else {
+    const err = document.getElementById('pwd-error');
+    err.style.display = 'block';
+    document.getElementById('pwd-input').value = '';
+    setTimeout(() => err.style.display = 'none', 3000);
+  }
+}
+
+function buildMonthsTable() {
+  const tb = document.getElementById('months-tbody');
+  tb.innerHTML = '';
+  MN.forEach((m,i) => {
+    tb.innerHTML += `<tr>
+      <td style="padding:4px 8px;color:#aaa;font-size:12px">${m}</td>
+      <td style="padding:3px 6px"><input class="inp" type="number" value="${months[i].v}" style="width:65px;padding:4px 8px;font-size:12px" onchange="months[${i}].v=this.value"/></td>
+      <td style="padding:3px 6px"><input class="inp" value="${months[i].n}" style="padding:4px 8px;font-size:12px" onchange="months[${i}].n=this.value"/></td>
+    </tr>`;
+  });
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  const d = DEMOS[tab];
+  // Update tabs styling
+  Object.keys(DEMOS).forEach(t => {
+    const btn = document.getElementById('tab-'+t);
+    btn.classList.remove('active');
+    btn.style.background = 'rgba(255,255,255,0.04)';
+    btn.style.borderColor = 'rgba(255,255,255,0.12)';
+    btn.style.color = '#aaa';
+  });
+  const activeBtn = document.getElementById('tab-'+tab);
+  activeBtn.classList.add('active');
+  activeBtn.style.background = d.color;
+  activeBtn.style.borderColor = d.color;
+  activeBtn.style.color = '#fff';
+  // Update card header
+  document.getElementById('card-tag').style.background = d.color+'22';
+  document.getElementById('card-tag').style.color = d.color;
+  document.getElementById('card-tag').textContent = d.tag;
+  document.getElementById('card-title').textContent = d.title;
+  document.getElementById('card-who').innerHTML = 'For: <span style="color:#3A7BD5;font-weight:600">'+d.who+'</span>';
+  // Show correct inputs
+  ['forecast','leads','ar','design','workflow'].forEach(t => {
+    document.getElementById('inputs-'+t).style.display = t===tab?'block':'none';
+  });
+  // Update run button color
+  document.getElementById('run-btn').style.background = d.color;
+  document.getElementById('placeholder-emoji').textContent = d.emoji;
+  document.getElementById('loading-emoji').textContent = d.emoji;
+  // Update dots color
+  document.querySelectorAll('#dots-row div').forEach(d2 => d2.style.background = d.color);
+  // Reset output
+  resetOutput();
+  // Update legal title based on mode
+  if (tab === 'workflow') updateWorkflowTitle();
+}
+
+function updateWorkflowTitle() {
+  if (workflowCurrentMode === 'contract') {
+    document.getElementById('card-title').textContent = 'Contract Drafting';
+  } else {
+    document.getElementById('card-title').textContent = 'Legal Workflow';
+  }
+}
+
+function leadsMode(mode) {
+  leadsCurrentMode = mode;
+  const cold = document.getElementById('leads-toggle-cold');
+  const fu = document.getElementById('leads-toggle-followup');
+  if (mode === 'cold') {
+    cold.classList.add('active'); cold.style.borderColor='#3A7BD5'; cold.style.background='#3A7BD522'; cold.style.color='#6aabf0';
+    fu.classList.remove('active'); fu.style.borderColor='rgba(255,255,255,0.15)'; fu.style.background='transparent'; fu.style.color='#888';
+    document.getElementById('card-title').textContent = 'Cold Outreach Email';
+  } else {
+    fu.classList.add('active'); fu.style.borderColor='#3A7BD5'; fu.style.background='#3A7BD522'; fu.style.color='#6aabf0';
+    cold.classList.remove('active'); cold.style.borderColor='rgba(255,255,255,0.15)'; cold.style.background='transparent'; cold.style.color='#888';
+    document.getElementById('card-title').textContent = 'Follow-up Email';
+  }
+  resetOutput();
+}
+
+function workflowMode(mode) {
+  workflowCurrentMode = mode;
+  const wb = document.getElementById('wf-toggle-workflow');
+  const cd = document.getElementById('wf-toggle-contract');
+  if (mode === 'workflow') {
+    wb.classList.add('active'); wb.style.borderColor='#1B8B6E'; wb.style.background='#1B8B6E22'; wb.style.color='#2DD4BF';
+    cd.classList.remove('active'); cd.style.borderColor='rgba(255,255,255,0.15)'; cd.style.background='transparent'; cd.style.color='#888';
+    document.getElementById('wf-workflow-inputs').style.display='block';
+    document.getElementById('wf-contract-inputs').style.display='none';
+  } else {
+    cd.classList.add('active'); cd.style.borderColor='#1B8B6E'; cd.style.background='#1B8B6E22'; cd.style.color='#2DD4BF';
+    wb.classList.remove('active'); wb.style.borderColor='rgba(255,255,255,0.15)'; wb.style.background='transparent'; wb.style.color='#888';
+    document.getElementById('wf-workflow-inputs').style.display='none';
+    document.getElementById('wf-contract-inputs').style.display='block';
+  }
+  updateWorkflowTitle();
+  resetOutput();
+}
+
+function handleParticipant(idx) {
+  idx = parseInt(idx);
+  if (idx === 0) return;
+  const p = PARTICIPANTS[idx];
+  if (!p) return;
+  const fields = {
+    'f-industry': p.industry, 'f-biz': p.biz, 'f-prospect': p.prospect,
+    'f-advantage': p.advantage, 'f-client': p.client, 'f-amount': p.amount,
+    'f-days': p.days, 'f-dtype': p.dtype, 'f-dclient': p.dclient, 'f-wnotes': p.wnotes,
+    'f-question': p.question || 'What will next month look like and should I adjust my inventory?',
+  };
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  });
+  // Update months table data if participant has custom sales data
+  if (p.months) {
+    months = p.months;
+    buildMonthsTable();
+  }
+  const confirm = document.getElementById('participant-confirm');
+  confirm.style.display = 'inline';
+  setTimeout(() => confirm.style.display='none', 3000);
+}
+
+function resetOutput() {
+  document.getElementById('output-placeholder').style.display = 'flex';
+  document.getElementById('output-loading').style.display = 'none';
+  document.getElementById('output-content').style.display = 'none';
+  document.getElementById('dl-btn').style.display = 'none';
+  currentOutput = '';
+  contractHistory = [];
+}
+
+function buildPrompt() {
+  const tab = currentTab;
+  const g = id => (document.getElementById(id)||{}).value||'';
+
+  if (tab === 'forecast') {
+    const rows = MN.map((m,i) => m+': Rs.'+months[i].v+' Lakh ('+months[i].n+')').join('\n');
+    return 'Business analytics expert for Indian SMEs.\n\n6 months sales for '+g('f-industry')+' business:\n'+rows+'\n\nOwner question: '+g('f-question')+'\n\nReply with EXACTLY this structure, no deviations:\nTREND ANALYSIS: [3 sentences]\nFORECAST: Rs.[number]-[number] Lakh ([confidence]% confidence)\nKEY INSIGHT: [1 sentence]\nRECOMMENDATION: [1 specific actionable step]\n\nUnder 180 words. Use Rs. Be direct. The FORECAST line must follow format: Rs.XX-YY Lakh';
+  }
+  if (tab === 'leads' && leadsCurrentMode === 'cold') {
+    return 'B2B sales copywriter for Indian businesses.\n\nCold outreach email:\n- Business: '+g('f-biz')+'\n- Prospect: '+g('f-prospect')+'\n- Advantage: '+g('f-advantage')+'\n- Tone: '+g('f-tone')+'\n\nRespond with EXACTLY this format, no extra text before or after:\nSUBJECT A: [subject line option 1]\nSUBJECT B: [subject line option 2]\n\nBODY:\n[email body max 100 words + professional sign-off]\n\nHuman, not templated.';
+  }
+  if (tab === 'leads' && leadsCurrentMode === 'followup') {
+    return 'B2B sales copywriter for Indian businesses.\n\nWrite a follow-up email for a prospect who did not reply to the cold email:\n- Business: '+g('f-biz')+'\n- Prospect: '+g('f-prospect')+'\n- Original advantage: '+g('f-advantage')+'\n- Tone: '+g('f-tone')+'\n\nFormat EXACTLY:\nSUBJECT: [follow-up subject line]\n\nBODY:\n[follow-up email, max 80 words, references the previous email, adds a different angle, soft CTA]\n\nKeep it brief and human.';
+  }
+  if (tab === 'ar') {
+    return 'Write 3 escalating payment reminders.\n- Client: '+g('f-client')+'\n- Amount: Rs.'+g('f-amount')+'\n- Days overdue: '+g('f-days')+'\n- Relationship: '+g('f-rel')+'\n\nUse EXACTLY this structure with these exact headings:\nMESSAGE 1 - WhatsApp (Day 1):\n[friendly message, max 3 lines]\n\nMESSAGE 2 - Email (Day 5):\n[firmer message with subject line]\n\nMESSAGE 3 - Formal Email (Day 12):\n[serious message with deadline and next steps]\n\nTEAM SUMMARY: [one sentence for internal escalation]\n\nKeep each message tight.';
+  }
+  if (tab === 'design') {
+    return 'Senior furniture designer, premium Indian design house.\n\nDesign brief:\n- Type: '+g('f-dtype')+'\n- Style: '+g('f-style')+'\n- Client: '+g('f-dclient')+'\n- Budget: '+g('f-budget')+'\n\nRespond with EXACTLY this structure:\n1. CONCEPT NAME: [name]\n2. PHILOSOPHY: [2 sentences]\n3. MATERIALS: [list]\n4. DIMENSIONS: [details]\n5. KEY FEATURES: [3 features]\n6. MOOD WORDS: [word1] · [word2] · [word3] · [word4] · [word5]\n7. COLOURS: [Name1]: #[hexcode1] | [Name2]: #[hexcode2] | [Name3]: #[hexcode3]\n8. PITCH LINE: [one line]\n\nCritical: MOOD WORDS must be exactly 5 words separated by · and COLOURS must use format Name: #hexcode\n\nUnder 250 words.';
+  }
+  if (tab === 'workflow' && workflowCurrentMode === 'workflow') {
+    return 'Legal ops consultant, Indian law firm.\n\nWorkflow for:\n- Assignment: '+g('f-wtype')+'\n- Client: '+g('f-wclient')+'\n- Notes: '+g('f-wnotes')+'\n\n1. INTAKE CHECKLIST (5 items)\n2. STEPS numbered as: Step N | Role | Time\n3. RISK FLAGS (3 items)\n4. TIMELINE\n5. BILLING CHECKPOINT\n\nIndia-specific. Under 220 words.';
+  }
+  if (tab === 'workflow' && workflowCurrentMode === 'contract') {
+    return 'You are a senior Indian corporate lawyer. Draft a professional '+g('f-contract-type')+'.\n\nParties:\n- Party 1: '+g('f-party1')+'\n- Party 2: '+g('f-party2')+'\n- Key terms: '+g('f-contract-notes')+'\n\nDraft a complete contract with ALL of these sections:\n1. PARTIES\n2. RECITALS / BACKGROUND\n3. KEY CLAUSES\n4. OBLIGATIONS OF EACH PARTY\n5. TERM AND TERMINATION\n6. GOVERNING LAW (India)\n7. SIGNATURE BLOCK\n\nIMPORTANT: Write as much as you can. If you cannot finish in one response, end with exactly: [CONTINUES...]\nIf complete, do NOT include [CONTINUES...]\n\nUse plain English. Include [FILL IN] placeholders. Legally sound for Indian SMEs.';
+  }
+  return '';
+}
+
+async function runDemo() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top:2px solid #fff;border-radius:50%;animation:spin 0.8s linear infinite"></div>&nbsp;Generating...';
+
+  document.getElementById('output-placeholder').style.display = 'none';
+  document.getElementById('output-loading').style.display = 'flex';
+  document.getElementById('output-content').style.display = 'none';
+  document.getElementById('dl-btn').style.display = 'none';
+
+  const prompt = buildPrompt();
+  const isContract = currentTab === 'workflow' && workflowCurrentMode === 'contract';
+
+  // Build messages — first call uses just the prompt, continuations use history
+  contractHistory = [{ role: 'user', content: prompt }];
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: isContract ? 1500 : (currentTab==='workflow' ? 1200 : 900), messages: contractHistory })
+    });
+    if (res.status === 401 || res.status === 403) throw new Error('Invalid API key. Please go back and enter a valid Anthropic key.');
+    if (!res.ok) throw new Error('API error ' + res.status + '. Please try again.');
+    const data = await res.json();
+    const text = (data.content||[]).map(b=>b.text||'').join('');
+    currentOutput = text;
+    // Add assistant reply to history for potential continuation
+    contractHistory.push({ role: 'assistant', content: text });
+    // Show output panel FIRST so canvas has rendered dimensions before chart draws
+    document.getElementById('output-loading').style.display = 'none';
+    document.getElementById('output-content').style.display = 'block';
+    renderOutput(text);
+    // Check if contract needs continuation
+    if (isContract) checkContractContinuation(text);
+  } catch(e) {
+    currentOutput = '⚠️ ' + e.message;
+    document.getElementById('output-loading').style.display = 'none';
+    document.getElementById('output-content').style.display = 'block';
+    renderOutput(currentOutput);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '▶&nbsp; Run Demo';
+  document.getElementById('dl-btn').style.display = 'inline-block';
+  document.getElementById('print-btn').style.display = 'inline-block';
+  const d = DEMOS[currentTab];
+  document.getElementById('dl-btn').style.borderColor = d.color+'88';
+  document.getElementById('dl-btn').style.color = d.color;
+  // Scroll to output on mobile
+  if (window.innerWidth <= 700) {
+    document.getElementById('output-content').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
+function checkContractContinuation(text) {
+  const continueWrap = document.getElementById('contract-continue-wrap');
+  const completeBadge = document.getElementById('contract-complete-badge');
+  if (text.includes('[CONTINUES...]')) {
+    continueWrap.style.display = 'block';
+    completeBadge.style.display = 'none';
+  } else {
+    continueWrap.style.display = 'none';
+    completeBadge.style.display = 'block';
+  }
+}
+
+async function continueContract() {
+  const btn = document.getElementById('contract-continue-btn');
+  btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top:2px solid #fff;border-radius:50%;animation:spin 0.8s linear infinite"></div><span>Generating...</span>';
+  btn.disabled = true;
+  document.getElementById('contract-continue-wrap').style.display = 'none';
+
+  // Add continuation instruction to history
+  contractHistory.push({ role: 'user', content: 'Please continue drafting the contract from where you left off. Continue seamlessly without repeating what was already written.' });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: contractHistory })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const newText = (data.content||[]).map(b=>b.text||'').join('');
+
+    // Append to history and output
+    contractHistory.push({ role: 'assistant', content: newText });
+
+    // Strip [CONTINUES...] from previous output, append new part
+    const cleanPrev = currentOutput.replace(/\[CONTINUES\.\.\.\]/g, '').trimEnd();
+    currentOutput = cleanPrev + '\n\n' + newText;
+
+    // Update display
+    const workflowEl = document.getElementById('workflow-text');
+    workflowEl.textContent = currentOutput;
+
+    checkContractContinuation(newText);
+  } catch(e) {
+    document.getElementById('contract-continue-wrap').style.display = 'block';
+    btn.innerHTML = '<span>Continue →</span>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>Continue →</span>';
+}
+
+
+  ['forecast','leads','ar','design','workflow'].forEach(t => {
+    document.getElementById('out-'+t).style.display = 'none';
+  });
+  const tab = currentTab;
+  document.getElementById('out-'+tab).style.display = 'block';
+
+  if (tab === 'forecast') {
+    document.getElementById('forecast-text').textContent = text;
+    drawForecastChart(text);
+  }
+
+  if (tab === 'leads') {
+    const sA = (text.match(/SUBJECT A:([^\n]+)/i)||['',''])[1].trim();
+    const sB = (text.match(/SUBJECT B:([^\n]+)/i)||['',''])[1].trim();
+    const body = (text.match(/BODY:\s*([\s\S]+)/i)||['',text])[1].trim();
+    if (sA || sB) {
+      document.getElementById('leads-subjects').style.display = 'block';
+      document.getElementById('subject-a').textContent = sA ? 'A: '+sA : '';
+      document.getElementById('subject-b').textContent = sB ? 'B: '+sB : '';
+    }
+    document.getElementById('email-body-box').textContent = body || text;
+  }
+
+  if (tab === 'ar') {
+    document.getElementById('ar-text').textContent = text;
+    const waRaw = (text.match(/MESSAGE 1[^:]*:([\s\S]*?)(?=MESSAGE 2)/i)||['',''])[1].trim();
+    currentWaMsg = waRaw;
+    if (waRaw) {
+      document.getElementById('wa-preview').style.display = 'block';
+      document.getElementById('wa-msg-text').textContent = waRaw;
+    }
+    const teamSum = (text.match(/TEAM SUMMARY:([^\n]+)/i)||['',''])[1].trim();
+    if (teamSum) {
+      document.getElementById('escalation-box').style.display = 'block';
+      document.getElementById('escalation-text').textContent = teamSum;
+    }
+  }
+
+  if (tab === 'design') {
+    document.getElementById('design-text').textContent = text;
+    const moodRaw = (text.match(/MOOD WORDS?:?\s*([^\n]+)/i)||[])[1]||'';
+    const moodWords = moodRaw.split(/[·|,]/).map(w=>w.trim()).filter(Boolean);
+    const moodEl = document.getElementById('mood-tags');
+    moodEl.innerHTML = '';
+    moodWords.forEach(w => { const s=document.createElement('span'); s.className='mood-tag'; s.textContent=w; moodEl.appendChild(s); });
+
+    const colMatches = [...text.matchAll(/([A-Za-z][A-Za-z ]{2,18}):\s*(#[0-9a-fA-F]{6})/g)].slice(0,3);
+    const swEl = document.getElementById('colour-swatches');
+    swEl.innerHTML = '';
+    colMatches.forEach(m => {
+      const d=document.createElement('div'); d.style.cssText='display:flex;align-items:center;gap:7px';
+      const sw=document.createElement('div'); sw.className='colour-swatch'; sw.style.background=m[2]; sw.style.boxShadow='0 2px 8px '+m[2]+'55';
+      const lbl=document.createElement('span'); lbl.style.cssText='font-size:11px;color:#889'; lbl.textContent=m[1].trim();
+      d.appendChild(sw); d.appendChild(lbl); swEl.appendChild(d);
+    });
+
+    // AI Tools section
+    const aiToolsSection = document.getElementById('ai-tools-section');
+    const aiToolsList = document.getElementById('ai-tools-list');
+    aiToolsList.innerHTML = '';
+    const tools = [
+      { name:'Midjourney', desc:'Generate mood boards and photorealistic furniture visualisations from your brief', badge:'paid' },
+      { name:'SketchUp Free', desc:'3D modelling and spatial layout — perfect for client walkthroughs', badge:'free' },
+      { name:'Adobe Firefly', desc:'Material and texture visualisation — see how fabrics and finishes look', badge:'free' },
+      { name:'Canva', desc:'Build a polished client presentation deck from your design brief', badge:'free' },
+      { name:'Roomstyler 3D', desc:'Place your furniture in a room layout and share a 3D walkthrough link', badge:'free' },
+    ];
+    tools.forEach(t => {
+      aiToolsList.innerHTML += `<div class="tool-card"><div class="tool-name">${t.name}<span class="tool-badge ${t.badge}">${t.badge.toUpperCase()}</span></div><div class="tool-desc">${t.desc}</div></div>`;
+    });
+    aiToolsSection.style.display = 'block';
+  }
+
+  if (tab === 'workflow') {
+    document.getElementById('workflow-text').textContent = text;
+    // Reset continuation UI
+    document.getElementById('contract-continue-wrap').style.display = 'none';
+    document.getElementById('contract-complete-badge').style.display = 'none';
+    const steps = [...text.matchAll(/Step\s*(\d+)\s*\|\s*([^|\n]+)\|?\s*([^\n]*)/gi)];
+    const stepsEl = document.getElementById('steps-list');
+    stepsEl.innerHTML = '';
+    if (steps.length > 0) {
+      document.getElementById('workflow-steps-vis').style.display = 'block';
+      steps.forEach(s => {
+        stepsEl.innerHTML += `<div class="step-row"><div class="step-badge">${s[1]}</div><div class="step-content"><span style="color:#2DD4BF;font-weight:600">${s[2].trim()}</span>${s[3]?'<span style="color:#445;margin-left:8px;font-size:11px">· '+s[3].trim()+'</span>':''}</div></div>`;
+      });
+    }
+  }
+}
+
+function drawForecastChart(text) {
+  const canvas = document.getElementById('forecast-chart');
+  const ctx = canvas.getContext('2d');
+  const W = 480;
+  canvas.width = W;
+  canvas.height = 180;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const H = 140;
+
+  const vals = months.map(m => parseInt(m.v)||0);
+  // Try multiple patterns to extract forecast value from AI text
+  let forecastVal = null;
+  const patterns = [
+    /Rs\.?\s*(\d+)\s*(?:–|-|to)\s*(\d+)\s*[Ll]akh/i,
+    /Rs\.?\s*(\d+)[^\d]+(\d+)\s*[Ll]akh/i,
+    /(\d+)\s*(?:–|-|to)\s*(\d+)\s*[Ll]akh/i,
+    /FORECAST[^\d]*(\d+)[^\d]+(\d+)/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) { forecastVal = Math.round((parseInt(m[1])+parseInt(m[2]))/2); break; }
+  }
+  // fallback: single number after Rs.
+  if (!forecastVal) {
+    const m2 = text.match(/FORECAST[^\d]*Rs\.?\s*(\d+)/i);
+    if (m2) forecastVal = parseInt(m2[1]);
+  }
+
+  const allVals = forecastVal ? [...vals, forecastVal] : vals;
+  const maxVal = Math.max(...allVals) * 1.2;
+  const labels = forecastVal ? [...MN, 'Jul'] : MN;
+  const n = labels.length;
+  const pad = 40; const chartW = W - pad*2; const barW = chartW/n*0.6; const gap = chartW/n;
+
+  ctx.clearRect(0,0,W,H+40);
+
+  // Grid lines
+  for (let i=0;i<=4;i++) {
+    const y = H - (i/4)*H + 10;
+    ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke();
+    ctx.fillStyle='#556'; ctx.font='10px system-ui'; ctx.textAlign='right';
+    ctx.fillText(Math.round(maxVal*i/4), pad-4, y+3);
+  }
+
+  // Bars
+  labels.forEach((lbl,i) => {
+    const val = i < vals.length ? vals[i] : forecastVal;
+    const bH = (val/maxVal)*H;
+    const x = pad + i*gap + (gap-barW)/2;
+    const y = H - bH + 10;
+    const isPred = i >= vals.length;
+    ctx.fillStyle = isPred ? '#C4472A' : '#3A7BD5';
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, bH, [4,4,0,0]);
+    ctx.fill();
+    // Value label
+    ctx.fillStyle = isPred ? '#C4472A' : '#aaa';
+    ctx.font = 'bold 10px system-ui'; ctx.textAlign='center';
+    ctx.fillText(val, x+barW/2, y-4);
+    // X label
+    ctx.fillStyle = isPred ? '#C4472A' : '#778';
+    ctx.font = (isPred?'bold ':'')+'11px system-ui';
+    ctx.fillText(lbl, x+barW/2, H+24);
+  });
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent||el.value||'');
+  showCopyFeedback(event.target);
+}
+
+function copyWa() {
+  navigator.clipboard.writeText(currentWaMsg);
+  showCopyFeedback(event.target);
+}
+
+function showCopyFeedback(btn) {
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  btn.style.color = '#1B8B6E';
+  btn.style.borderColor = '#1B8B6E';
+  setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+}
+
+function downloadOutput() {
+  const pIdx = parseInt(document.getElementById('participant-select').value);
+  const pName = pIdx > 0 ? ['','Abhimanyu','Aleem','KunalD','KunalMehta','Rahul','Ritesh','Rashesh','Sandeep','Mihika','Sidharth'][pIdx] : 'Demo';
+  const dLabel = DEMOS[currentTab].title;
+  const content = 'DATA OWL — AI Demo Output\n' + '='.repeat(40) + '\nDemo: ' + dLabel + '\nFor: ' + pName + '\nDate: ' + new Date().toLocaleDateString('en-IN') + '\n' + '='.repeat(40) + '\n\n' + currentOutput + '\n\n' + '='.repeat(40) + '\nPowered by Data Owl';
+  const blob = new Blob([content], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'DataOwl_' + dLabel.replace(/\s+/g,'_') + '_' + pName + '.txt';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Init
+buildMonthsTable();
+document.getElementById('apikey-input').addEventListener('keydown', e => { if(e.key==='Enter') handleApiKey(); });
+
+// Make roundRect work in older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    this.beginPath(); this.moveTo(x+r,y);
+    this.lineTo(x+w-r,y); this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r); this.arcTo(x+w,y+h,x+w-r,y+h,r);
+    this.lineTo(x+r,y+h); this.arcTo(x,y+h,x,y+h-r,r);
+    this.lineTo(x,y+r); this.arcTo(x,y,x+r,y,r);
+    this.closePath();
+  };
+}
+</script>
+</body>
+</html>
